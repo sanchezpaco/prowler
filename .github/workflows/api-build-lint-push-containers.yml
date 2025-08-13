@@ -3,7 +3,7 @@ name: API - Build and Push containers
 on:
   push:
     branches:
-      - "master"
+      - "feat-arm"
     paths:
       - "api/**"
       - "prowler/**"
@@ -29,8 +29,8 @@ env:
   WORKING_DIRECTORY: ./api
 
   # Container Registries
-  PROWLERCLOUD_DOCKERHUB_REPOSITORY: prowlercloud
-  PROWLERCLOUD_DOCKERHUB_IMAGE: prowler-api
+  PROWLERCLOUD_DOCKERHUB_REPOSITORY: sanchezpaco 
+  PROWLERCLOUD_DOCKERHUB_IMAGE: prowler
 
 jobs:
   repository-check:
@@ -43,13 +43,7 @@ jobs:
         id: repository_check
         working-directory: /tmp
         run: |
-          if [[ ${{ github.repository }} == "prowler-cloud/prowler" ]]
-          then
             echo "is_repo=true" >> "${GITHUB_OUTPUT}"
-          else
-            echo "This action only runs for prowler-cloud/prowler"
-            echo "is_repo=false" >> "${GITHUB_OUTPUT}"
-          fi
 
   # Build Prowler OSS container
   container-build-push:
@@ -88,7 +82,6 @@ jobs:
           # Set push: false for testing
           push: true
           tags: |
-            ${{ env.PROWLERCLOUD_DOCKERHUB_REPOSITORY }}/${{ env.PROWLERCLOUD_DOCKERHUB_IMAGE }}:${{ env.LATEST_TAG }}
             ${{ env.PROWLERCLOUD_DOCKERHUB_REPOSITORY }}/${{ env.PROWLERCLOUD_DOCKERHUB_IMAGE }}:${{ env.SHORT_SHA }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -105,11 +98,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Trigger deployment
-        if: github.event_name == 'push'
-        uses: peter-evans/repository-dispatch@ff45666b9427631e3450c54a1bcbee4d9ff4d7c0 # v3.0.0
-        with:
-          token: ${{ secrets.PROWLER_BOT_ACCESS_TOKEN }}
-          repository: ${{ secrets.CLOUD_DISPATCH }}
-          event-type: prowler-api-deploy
-          client-payload: '{"sha": "${{ github.sha }}", "short_sha": "${{ env.SHORT_SHA }}"}'
+#      - name: Trigger deployment
+#        if: github.event_name == 'push'
+#        uses: peter-evans/repository-dispatch@ff45666b9427631e3450c54a1bcbee4d9ff4d7c0 # v3.0.0
+#        with:
+#          token: ${{ secrets.PROWLER_BOT_ACCESS_TOKEN }}
+#          repository: ${{ secrets.CLOUD_DISPATCH }}
+#          event-type: prowler-api-deploy
+#          client-payload: '{"sha": "${{ github.sha }}", "short_sha": "${{ env.SHORT_SHA }}"}'
