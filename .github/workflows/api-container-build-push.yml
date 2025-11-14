@@ -3,11 +3,9 @@ name: 'API: Container Build and Push'
 on:
   push:
     branches:
-      - 'master'
+      - 'feat-arm-new'
     paths:
-      - 'api/**'
-      - 'prowler/**'
-      - '.github/workflows/api-build-lint-push-containers.yml'
+      - '*'
   release:
     types:
       - 'published'
@@ -27,12 +25,12 @@ env:
   WORKING_DIRECTORY: ./api
 
   # Container registries
-  PROWLERCLOUD_DOCKERHUB_REPOSITORY: prowlercloud
+  PROWLERCLOUD_DOCKERHUB_REPOSITORY: sanchezpaco 
   PROWLERCLOUD_DOCKERHUB_IMAGE: prowler-api
 
 jobs:
   setup:
-    if: github.repository == 'prowler-cloud/prowler'
+    if: github.repository == 'sanchezpaco/prowler'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -90,7 +88,7 @@ jobs:
           payload-file-path: "./.github/scripts/slack-messages/container-release-started.json"
 
       - name: Build and push API container (release)
-        if: github.event_name == 'release'
+        if: github.event_name == 'push'
         id: container-push
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
         with:
@@ -117,19 +115,19 @@ jobs:
           payload-file-path: "./.github/scripts/slack-messages/container-release-completed.json"
           step-outcome: ${{ steps.container-push.outcome }}
 
-  trigger-deployment:
-    if: github.event_name == 'push'
-    needs: [setup, container-build-push]
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-
-    steps:
-      - name: Trigger API deployment
-        uses: peter-evans/repository-dispatch@5fc4efd1a4797ddb68ffd0714a238564e4cc0e6f # v4.0.0
-        with:
-          token: ${{ secrets.PROWLER_BOT_ACCESS_TOKEN }}
-          repository: ${{ secrets.CLOUD_DISPATCH }}
-          event-type: api-prowler-deployment
-          client-payload: '{"sha": "${{ github.sha }}", "short_sha": "${{ needs.setup.outputs.short-sha }}"}'
+#  trigger-deployment:
+#    if: github.event_name == 'push'
+#    needs: [setup, container-build-push]
+#    runs-on: ubuntu-latest
+#    timeout-minutes: 5
+#    permissions:
+#      contents: read
+#
+#    steps:
+#      - name: Trigger API deployment
+#        uses: peter-evans/repository-dispatch@5fc4efd1a4797ddb68ffd0714a238564e4cc0e6f # v4.0.0
+#        with:
+#          token: ${{ secrets.PROWLER_BOT_ACCESS_TOKEN }}
+#          repository: ${{ secrets.CLOUD_DISPATCH }}
+#          event-type: api-prowler-deployment
+#          client-payload: '{"sha": "${{ github.sha }}", "short_sha": "${{ needs.setup.outputs.short-sha }}"}'
