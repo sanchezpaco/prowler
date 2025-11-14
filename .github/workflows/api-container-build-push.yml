@@ -3,11 +3,7 @@ name: 'API: Container Build and Push'
 on:
   push:
     branches:
-      - 'master'
-    paths:
-      - 'api/**'
-      - 'prowler/**'
-      - '.github/workflows/api-build-lint-push-containers.yml'
+      - 'feat-arm-new'
   release:
     types:
       - 'published'
@@ -22,17 +18,17 @@ concurrency:
 env:
   # Tags
   LATEST_TAG: latest
-  RELEASE_TAG: ${{ github.event.release.tag_name }}
+  RELEASE_TAG: release-${{ github.commit.sha }} 
   STABLE_TAG: stable
   WORKING_DIRECTORY: ./api
 
   # Container registries
-  PROWLERCLOUD_DOCKERHUB_REPOSITORY: prowlercloud
+  PROWLERCLOUD_DOCKERHUB_REPOSITORY: sanchezpaco 
   PROWLERCLOUD_DOCKERHUB_IMAGE: prowler-api
 
 jobs:
   setup:
-    if: github.repository == 'prowler-cloud/prowler'
+    if: github.repository == 'sanchezpaco/prowler'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -139,7 +135,7 @@ jobs:
             ${{ env.PROWLERCLOUD_DOCKERHUB_REPOSITORY }}/${{ env.PROWLERCLOUD_DOCKERHUB_IMAGE }}:${{ needs.setup.outputs.short-sha }}-arm64
 
       - name: Create and push manifests for release event
-        if: github.event_name == 'release'
+        if: github.event_name == 'push'
         run: |
           docker buildx imagetools create \
             -t ${{ env.PROWLERCLOUD_DOCKERHUB_REPOSITORY }}/${{ env.PROWLERCLOUD_DOCKERHUB_IMAGE }}:${{ env.RELEASE_TAG }} \
@@ -159,19 +155,20 @@ jobs:
           regctl tag delete "${{ env.PROWLERCLOUD_DOCKERHUB_REPOSITORY }}/${{ env.PROWLERCLOUD_DOCKERHUB_IMAGE }}:${{ needs.setup.outputs.short-sha }}-arm64" || true
           echo "Cleanup completed"
 
-  trigger-deployment:
-    if: github.event_name == 'push'
-    needs: [setup, container-build-push]
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-
-    steps:
-      - name: Trigger API deployment
-        uses: peter-evans/repository-dispatch@5fc4efd1a4797ddb68ffd0714a238564e4cc0e6f # v4.0.0
-        with:
-          token: ${{ secrets.PROWLER_BOT_ACCESS_TOKEN }}
-          repository: ${{ secrets.CLOUD_DISPATCH }}
-          event-type: api-prowler-deployment
-          client-payload: '{"sha": "${{ github.sha }}", "short_sha": "${{ needs.setup.outputs.short-sha }}"}'
+#  trigger-deployment:
+#    if: github.event_name == 'push'
+#    needs: [setup, container-build-push]
+#    runs-on: ubuntu-latest
+#    timeout-minutes: 5
+#    permissions:
+#      contents: read
+#
+#    steps:
+#      - name: Trigger API deployment
+#        uses: peter-evans/repository-dispatch@5fc4efd1a4797ddb68ffd0714a238564e4cc0e6f # v4.0.0
+#        with:
+#          token: ${{ secrets.PROWLER_BOT_ACCESS_TOKEN }}
+#          repository: ${{ secrets.CLOUD_DISPATCH }}
+#          event-type: api-prowler-deployment
+#          client-payload: '{"sha": "${{ github.sha }}", "short_sha": "${{ needs.setup.outputs.short-sha }}"}'
+#
